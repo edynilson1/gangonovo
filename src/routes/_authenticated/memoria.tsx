@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/memoria")({
       { property: "og:description", content: "Pares por categoria, com tempo e precisão a valer XP." },
     ],
   }),
-  component: MemoryGame;
+  component: MemoryGame,
 });
 
 type Phase = "setup" | "playing" | "result";
