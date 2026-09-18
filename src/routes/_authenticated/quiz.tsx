@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { BottomNav } from "@/components/arena/BottomNav";
+import { useProfileGate } from "@/hooks/useProfileGate";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -36,6 +37,7 @@ type CategoryId = (typeof QUIZ_CATEGORIES)[number]["id"];
 
 function QuizGame() {
   const queryClient = useQueryClient();
+  useProfileGate();
   const [phase, setPhase] = useState<Phase>("setup");
   const [category, setCategory] = useState<CategoryId>("geral");
   const [questions, setQuestions] = useState<Question[]>([]);

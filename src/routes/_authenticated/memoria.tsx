@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { BottomNav } from "@/components/arena/BottomNav";
+import { useProfileGate } from "@/hooks/useProfileGate";
 import { Button } from "@/components/ui/button";
 import { submitMemoryResult } from "@/lib/arena.functions";
 import {
@@ -33,6 +34,7 @@ type Phase = "setup" | "playing" | "result";
 
 function MemoryGame() {
   const queryClient = useQueryClient();
+  useProfileGate();
   const [phase, setPhase] = useState<Phase>("setup");
   const [category, setCategory] = useState(MEMORY_CATEGORIES[0]!.id);
   const [pairs, setPairs] = useState<number>(MEMORY_DIFFICULTIES[0].pairs);

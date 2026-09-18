@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { BottomNav } from "@/components/arena/BottomNav";
+import { useProfileGate } from "@/hooks/useProfileGate";
 import { Button } from "@/components/ui/button";
 import { submitCheckersResult } from "@/lib/arena.functions";
 import {
@@ -46,6 +47,7 @@ const DIFFICULTIES: { id: Difficulty; label: string }[] = [
 
 function CheckersGame() {
   const queryClient = useQueryClient();
+  useProfileGate();
   const [phase, setPhase] = useState<Phase>("setup");
   const [difficulty, setDifficulty] = useState<Difficulty>("facil");
   const [board, setBoard] = useState<Board>(createInitialBoard);
