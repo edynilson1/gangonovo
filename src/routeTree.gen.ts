@@ -13,6 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedConfigurarPerfilRouteImport } from './routes/_authenticated/configurar-perfil'
+import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
+import { Route as AuthenticatedJogosRouteImport } from './routes/_authenticated/jogos'
+import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,16 +38,44 @@ const AuthenticatedConfigurarPerfilRoute =
     path: '/configurar-perfil',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJogosRoute = AuthenticatedJogosRouteImport.update({
+  id: '/jogos',
+  path: '/jogos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRankingRoute = AuthenticatedRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/configurar-perfil': typeof AuthenticatedConfigurarPerfilRoute
+  '/inicio': typeof AuthenticatedInicioRoute
+  '/jogos': typeof AuthenticatedJogosRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/ranking': typeof AuthenticatedRankingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/configurar-perfil': typeof AuthenticatedConfigurarPerfilRoute
+  '/inicio': typeof AuthenticatedInicioRoute
+  '/jogos': typeof AuthenticatedJogosRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/ranking': typeof AuthenticatedRankingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -51,18 +83,40 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/configurar-perfil': typeof AuthenticatedConfigurarPerfilRoute
+  '/_authenticated/inicio': typeof AuthenticatedInicioRoute
+  '/_authenticated/jogos': typeof AuthenticatedJogosRoute
+  '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/_authenticated/ranking': typeof AuthenticatedRankingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/configurar-perfil'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/configurar-perfil'
+    | '/inicio'
+    | '/jogos'
+    | '/perfil'
+    | '/ranking'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/configurar-perfil'
+  to:
+    | '/'
+    | '/auth'
+    | '/configurar-perfil'
+    | '/inicio'
+    | '/jogos'
+    | '/perfil'
+    | '/ranking'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/configurar-perfil'
+    | '/_authenticated/inicio'
+    | '/_authenticated/jogos'
+    | '/_authenticated/perfil'
+    | '/_authenticated/ranking'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -101,15 +155,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfigurarPerfilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/inicio': {
+      id: '/_authenticated/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof AuthenticatedInicioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jogos': {
+      id: '/_authenticated/jogos'
+      path: '/jogos'
+      fullPath: '/jogos'
+      preLoaderRoute: typeof AuthenticatedJogosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/perfil': {
+      id: '/_authenticated/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ranking': {
+      id: '/_authenticated/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof AuthenticatedRankingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfigurarPerfilRoute: typeof AuthenticatedConfigurarPerfilRoute
+  AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
+  AuthenticatedJogosRoute: typeof AuthenticatedJogosRoute
+  AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
+  AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfigurarPerfilRoute: AuthenticatedConfigurarPerfilRoute,
+  AuthenticatedInicioRoute: AuthenticatedInicioRoute,
+  AuthenticatedJogosRoute: AuthenticatedJogosRoute,
+  AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
+  AuthenticatedRankingRoute: AuthenticatedRankingRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
