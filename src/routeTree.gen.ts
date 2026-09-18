@@ -13,9 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedConfigurarPerfilRouteImport } from './routes/_authenticated/configurar-perfil'
+import { Route as AuthenticatedDamasRouteImport } from './routes/_authenticated/damas'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedJogosRouteImport } from './routes/_authenticated/jogos'
+import { Route as AuthenticatedMemoriaRouteImport } from './routes/_authenticated/memoria'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 
 const IndexRoute = IndexRouteImport.update({
@@ -38,6 +41,11 @@ const AuthenticatedConfigurarPerfilRoute =
     path: '/configurar-perfil',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDamasRoute = AuthenticatedDamasRouteImport.update({
+  id: '/damas',
+  path: '/damas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
   id: '/inicio',
   path: '/inicio',
@@ -48,9 +56,19 @@ const AuthenticatedJogosRoute = AuthenticatedJogosRouteImport.update({
   path: '/jogos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMemoriaRoute = AuthenticatedMemoriaRouteImport.update({
+  id: '/memoria',
+  path: '/memoria',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
+  id: '/quiz',
+  path: '/quiz',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRankingRoute = AuthenticatedRankingRouteImport.update({
@@ -63,18 +81,24 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/configurar-perfil': typeof AuthenticatedConfigurarPerfilRoute
+  '/damas': typeof AuthenticatedDamasRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/jogos': typeof AuthenticatedJogosRoute
+  '/memoria': typeof AuthenticatedMemoriaRoute
   '/perfil': typeof AuthenticatedPerfilRoute
+  '/quiz': typeof AuthenticatedQuizRoute
   '/ranking': typeof AuthenticatedRankingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/configurar-perfil': typeof AuthenticatedConfigurarPerfilRoute
+  '/damas': typeof AuthenticatedDamasRoute
   '/inicio': typeof AuthenticatedInicioRoute
   '/jogos': typeof AuthenticatedJogosRoute
+  '/memoria': typeof AuthenticatedMemoriaRoute
   '/perfil': typeof AuthenticatedPerfilRoute
+  '/quiz': typeof AuthenticatedQuizRoute
   '/ranking': typeof AuthenticatedRankingRoute
 }
 export interface FileRoutesById {
@@ -83,9 +107,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/configurar-perfil': typeof AuthenticatedConfigurarPerfilRoute
+  '/_authenticated/damas': typeof AuthenticatedDamasRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
   '/_authenticated/jogos': typeof AuthenticatedJogosRoute
+  '/_authenticated/memoria': typeof AuthenticatedMemoriaRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/_authenticated/quiz': typeof AuthenticatedQuizRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
 }
 export interface FileRouteTypes {
@@ -94,18 +121,24 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/configurar-perfil'
+    | '/damas'
     | '/inicio'
     | '/jogos'
+    | '/memoria'
     | '/perfil'
+    | '/quiz'
     | '/ranking'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/configurar-perfil'
+    | '/damas'
     | '/inicio'
     | '/jogos'
+    | '/memoria'
     | '/perfil'
+    | '/quiz'
     | '/ranking'
   id:
     | '__root__'
@@ -113,9 +146,12 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/configurar-perfil'
+    | '/_authenticated/damas'
     | '/_authenticated/inicio'
     | '/_authenticated/jogos'
+    | '/_authenticated/memoria'
     | '/_authenticated/perfil'
+    | '/_authenticated/quiz'
     | '/_authenticated/ranking'
   fileRoutesById: FileRoutesById
 }
@@ -155,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfigurarPerfilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/damas': {
+      id: '/_authenticated/damas'
+      path: '/damas'
+      fullPath: '/damas'
+      preLoaderRoute: typeof AuthenticatedDamasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inicio': {
       id: '/_authenticated/inicio'
       path: '/inicio'
@@ -169,11 +212,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJogosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/memoria': {
+      id: '/_authenticated/memoria'
+      path: '/memoria'
+      fullPath: '/memoria'
+      preLoaderRoute: typeof AuthenticatedMemoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/perfil': {
       id: '/_authenticated/perfil'
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/quiz': {
+      id: '/_authenticated/quiz'
+      path: '/quiz'
+      fullPath: '/quiz'
+      preLoaderRoute: typeof AuthenticatedQuizRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ranking': {
@@ -188,17 +245,23 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfigurarPerfilRoute: typeof AuthenticatedConfigurarPerfilRoute
+  AuthenticatedDamasRoute: typeof AuthenticatedDamasRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
   AuthenticatedJogosRoute: typeof AuthenticatedJogosRoute
+  AuthenticatedMemoriaRoute: typeof AuthenticatedMemoriaRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
+  AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfigurarPerfilRoute: AuthenticatedConfigurarPerfilRoute,
+  AuthenticatedDamasRoute: AuthenticatedDamasRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
   AuthenticatedJogosRoute: AuthenticatedJogosRoute,
+  AuthenticatedMemoriaRoute: AuthenticatedMemoriaRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
+  AuthenticatedQuizRoute: AuthenticatedQuizRoute,
   AuthenticatedRankingRoute: AuthenticatedRankingRoute,
 }
 
