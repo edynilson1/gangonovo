@@ -329,7 +329,7 @@ export const submitCheckersResult = createServerFn({ method: "POST" })
       .object({
         clientToken: z.string().uuid(),
         result: z.enum(["win", "loss", "draw"]),
-        difficulty: z.enum(["facil", "medio", "dificil"]),
+        difficulty: z.enum(["facil", "medio", "dificil", "amigo"]),
         moves: z.number().int().min(0).max(500),
         capturedByPlayer: z.number().int().min(0).max(12),
         capturedByAi: z.number().int().min(0).max(12),
