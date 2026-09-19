@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { COUNTRY_CODES } from "@/lib/countries";
 import {
   checkersXp,
   memoryXp,
@@ -15,6 +16,7 @@ export type ProfileRow = {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  country_code: string | null;
   total_xp: number;
   wins: number;
   created_at: string;
@@ -26,6 +28,7 @@ export type LeaderboardEntry = {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  country_code: string | null;
   total_xp: number;
   wins: number;
 };
@@ -58,66 +61,10 @@ type RecordArgs = {
   countWin: boolean;
 };
 
-/** Grava a sessão + transação de XP com a chave de serviço (o cliente não escreve XP). */
+/** Delegado ao módulo server-only, que usa a chave de serviço. */
 async function recordSession(args: RecordArgs) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-  const { data: session, error } = await supabaseAdmin
-    .from("game_sessions")
-    .insert({
-      user_id: args.userId,
-      game_type: args.gameType,
-      client_token: args.clientToken,
-      score: args.score,
-      xp_earned: args.xp,
-      duration: Math.round(args.durationMs / 1000),
-      result: args.result,
-      metadata: args.metadata as never,
-    })
-    .select("id")
-    .single();
-
-  if (error) {
-    // Índice único (user_id, client_token): resultado duplicado não é recompensado outra vez.
-    if (error.code === "23505") {
-      throw new Error("Este resultado já foi registado.");
-    }
-    throw new Error("Não foi possível registar a partida.");
-  }
-
-  const { error: xpError } = await supabaseAdmin.from("xp_transactions").insert({
-    user_id: args.userId,
-    amount: args.xp,
-    source: args.gameType,
-    game_session_id: session.id,
-  });
-  if (xpError) throw new Error("Não foi possível registar o XP.");
-
-  if (args.countWin) {
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("wins")
-      .eq("id", args.userId)
-      .single();
-    await supabaseAdmin
-      .from("profiles")
-      .update({ wins: (profile?.wins ?? 0) + 1 })
-      .eq("id", args.userId);
-  }
-
-  const { data: updated } = await supabaseAdmin
-    .from("profiles")
-    .select("total_xp, wins")
-    .eq("id", args.userId)
-    .single();
-
-  return {
-    sessionId: session.id,
-    xpEarned: args.xp,
-    score: args.score,
-    totalXp: updated?.total_xp ?? 0,
-    wins: updated?.wins ?? 0,
-  };
+  const { recordSession: record } = await import("@/lib/match.server");
+  return record(args);
 }
 
 export const getMyProfile = createServerFn({ method: "GET" })
@@ -127,7 +74,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("id, username, display_name, avatar_url, total_xp, wins, created_at")
+      .select("id, username, display_name, avatar_url, country_code, total_xp, wins, created_at")
       .eq("id", userId)
       .maybeSingle();
 
@@ -159,6 +106,7 @@ export const saveProfile = createServerFn({ method: "POST" })
           .regex(/^[a-z0-9_]{3,16}$/, "Usa 3-16 caracteres: letras, números ou _"),
         displayName: z.string().trim().min(2, "Nome muito curto").max(24, "Nome muito longo"),
         avatarUrl: z.string().url().max(300),
+        countryCode: z.enum(COUNTRY_CODES as [string, ...string[]]).optional(),
       })
       .parse(input),
   )
@@ -172,6 +120,7 @@ export const saveProfile = createServerFn({ method: "POST" })
         username: data.username,
         display_name: data.displayName,
         avatar_url: data.avatarUrl,
+        ...(data.countryCode ? { country_code: data.countryCode } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
