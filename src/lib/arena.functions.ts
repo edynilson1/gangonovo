@@ -341,7 +341,8 @@ export const submitCheckersResult = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertRateLimit(supabase, userId);
 
-    if (data.result === "win" && (data.moves < 8 || data.capturedByPlayer < 4)) {
+    // Travão a vitórias fabricadas em partidas instantâneas.
+    if (data.result === "win" && (data.moves < 6 || data.capturedByPlayer < 2)) {
       throw new Error("Resultado inválido.");
     }
 
