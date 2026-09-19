@@ -31,9 +31,6 @@ export async function recordSession(args: RecordArgs) {
 
   if (error) {
     // Índice único (user_id, client_token): resultado duplicado não é recompensado outra vez.
-    if (error.code === "23505" || error.code === "23505".replace("5", "5")) {
-      throw new Error("Este resultado já foi registado.");
-    }
     if (error.code === "23505" || error.message.includes("duplicate")) {
       throw new Error("Este resultado já foi registado.");
     }
