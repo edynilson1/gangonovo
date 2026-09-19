@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  applyMove,
   boardFromJson,
   boardToJson,
   createInitialBoard,
@@ -246,9 +247,7 @@ export const playMove = createServerFn({ method: "POST" })
     if (!move) throw new Error("Jogada inválida.");
 
     const idle = isIdleMove(board, move);
-    const nextBoard = boardToJson(
-      (await import("@/lib/games/checkers")).applyMove(board, move),
-    );
+    const nextBoard = boardToJson(applyMove(board, move));
     const nextTurn = opponent(mySide);
 
     const captures = move.captures.length;
