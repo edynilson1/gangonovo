@@ -70,17 +70,22 @@ export function quizXp(p: QuizPerformance): { xp: number; score: number } {
   return { xp, score };
 }
 
+/** "amigo" = partida local a dois; "online" = partida 1x1 validada no servidor. */
+export type CheckersLevel = "facil" | "medio" | "dificil" | "amigo" | "online";
+
 export type CheckersPerformance = {
   result: "win" | "loss" | "draw";
   moves: number;
   durationMs: number;
-  difficulty: "facil" | "medio" | "dificil";
+  difficulty: CheckersLevel;
   capturedByPlayer: number;
   capturedByAi: number;
 };
 
 export function checkersXp(p: CheckersPerformance): { xp: number; score: number } {
-  const difficultyMultiplier = { facil: 1, medio: 1.3, dificil: 1.6 }[p.difficulty];
+  const difficultyMultiplier = { facil: 1, medio: 1.3, dificil: 1.6, amigo: 1.2, online: 1.55 }[
+    p.difficulty
+  ];
 
   const resultBase = { win: 55, draw: 26, loss: 14 }[p.result];
   const captureBonus = Math.min(24, p.capturedByPlayer * 3);

@@ -14,6 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkers_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkers_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "checkers_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkers_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkers_rooms: {
+        Row: {
+          board: Json
+          captures_a: number
+          captures_p: number
+          created_at: string
+          finished_at: string | null
+          guest_id: string | null
+          host_id: string
+          host_side: string
+          id: string
+          idle_moves: number
+          last_move: Json | null
+          move_count: number
+          outcome: string | null
+          started_at: string | null
+          status: string
+          turn: string
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          board: Json
+          captures_a?: number
+          captures_p?: number
+          created_at?: string
+          finished_at?: string | null
+          guest_id?: string | null
+          host_id: string
+          host_side?: string
+          id?: string
+          idle_moves?: number
+          last_move?: Json | null
+          move_count?: number
+          outcome?: string | null
+          started_at?: string | null
+          status?: string
+          turn?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          board?: Json
+          captures_a?: number
+          captures_p?: number
+          created_at?: string
+          finished_at?: string | null
+          guest_id?: string | null
+          host_id?: string
+          host_side?: string
+          id?: string
+          idle_moves?: number
+          last_move?: Json | null
+          move_count?: number
+          outcome?: string | null
+          started_at?: string | null
+          status?: string
+          turn?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkers_rooms_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkers_rooms_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkers_rooms_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_sessions: {
         Row: {
           client_token: string
@@ -64,6 +188,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          country_code: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -75,6 +200,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          country_code?: string | null
           created_at?: string
           display_name?: string | null
           id: string
@@ -86,6 +212,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          country_code?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -129,6 +256,32 @@ export type Database = {
           question?: string
         }
         Relationships: []
+      }
+      user_presence: {
+        Row: {
+          last_seen_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_presence_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       xp_transactions: {
         Row: {
@@ -181,6 +334,7 @@ export type Database = {
         Args: { _limit?: number }
         Returns: {
           avatar_url: string
+          country_code: string
           display_name: string
           id: string
           rank: number
