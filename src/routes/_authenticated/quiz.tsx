@@ -21,10 +21,14 @@ export const Route = createFileRoute("/_authenticated/quiz")({
       { title: "Quiz — XP Arena" },
       {
         name: "description",
-        content: "10 perguntas cronometradas de conhecimentos gerais, matemática, ciência e tecnologia.",
+        content:
+          "10 perguntas cronometradas de conhecimentos gerais, matemática, ciência e tecnologia.",
       },
       { property: "og:title", content: "Quiz — XP Arena" },
-      { property: "og:description", content: "Responde rápido, acerta em sequência e ganha mais XP." },
+      {
+        property: "og:description",
+        content: "Responde rápido, acerta em sequência e ganha mais XP.",
+      },
     ],
   }),
   component: QuizGame,
@@ -166,7 +170,11 @@ function QuizGame() {
     <div className="arena-hero min-h-screen">
       <main className="arena-safe-bottom mx-auto w-full max-w-md px-4 pt-6">
         <div className="mb-4 flex items-center gap-2">
-          <Link to="/jogos" aria-label="Voltar aos jogos" className="rounded-lg p-2 hover:bg-surface-2">
+          <Link
+            to="/jogos"
+            aria-label="Voltar aos jogos"
+            className="rounded-lg p-2 hover:bg-surface-2"
+          >
             <ArrowLeft className="size-5" aria-hidden="true" />
           </Link>
           <h1 className="text-xl font-bold">Quiz</h1>
@@ -258,7 +266,9 @@ function QuizGame() {
                 <p className="animate-xp-pop mt-2 text-4xl font-bold text-primary">
                   +{result?.xp ?? 0} XP
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">XP total: {result?.totalXp ?? 0}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  XP total: {result?.totalXp ?? 0}
+                </p>
 
                 <dl className="mt-5 grid grid-cols-3 gap-3 text-sm">
                   <div className="rounded-xl bg-surface-2 p-3">
@@ -285,7 +295,11 @@ function QuizGame() {
                   <Button className="h-12 w-full" onClick={() => void startRound()}>
                     <RotateCcw className="mr-2 size-4" aria-hidden="true" /> Jogar novamente
                   </Button>
-                  <Button variant="outline" className="h-11 w-full" onClick={() => setPhase("setup")}>
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full"
+                    onClick={() => setPhase("setup")}
+                  >
                     Mudar categoria
                   </Button>
                 </div>
@@ -294,7 +308,9 @@ function QuizGame() {
           </div>
         )}
 
-        {answers.length > 0 && phase === "playing" && <span className="sr-only">Respostas registadas</span>}
+        {answers.length > 0 && phase === "playing" && (
+          <span className="sr-only">Respostas registadas</span>
+        )}
       </main>
       <BottomNav />
     </div>

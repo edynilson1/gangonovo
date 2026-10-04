@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import { COUNTRY_CODES } from "@/lib/countries";
 import {
   checkersXp,
@@ -36,7 +38,7 @@ export type LeaderboardEntry = {
 const MAX_SESSIONS_PER_HOUR = 40;
 
 /** Impede acumulação abusiva de recompensas em pouco tempo. */
-async function assertRateLimit(supabase: any, userId: string) {
+async function assertRateLimit(supabase: SupabaseClient<Database>, userId: string) {
   const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { count, error } = await supabase
     .from("game_sessions")
@@ -113,16 +115,14 @@ export const saveProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { error } = await supabase
-  .from("profiles")
-  .upsert({
-    id: userId,
-    username: data.username,
-    display_name: data.displayName,
-    avatar_url: data.avatarUrl,
-    ...(data.countryCode ? { country_code: data.countryCode } : {}),
-    updated_at: new Date().toISOString(),
-  }); // Sem .eq() aqui!
+    const { error } = await supabase.from("profiles").upsert({
+      id: userId,
+      username: data.username,
+      display_name: data.displayName,
+      avatar_url: data.avatarUrl,
+      ...(data.countryCode ? { country_code: data.countryCode } : {}),
+      updated_at: new Date().toISOString(),
+    }); // Sem .eq() aqui!
 
     if (error) {
       if (error.code === "23505") throw new Error("Esse nome de utilizador já está em uso.");
@@ -169,7 +169,11 @@ export const submitMemoryResult = createServerFn({ method: "POST" })
         pairsTotal: z.number().int().min(6).max(10),
         pairsFound: z.number().int().min(0).max(10),
         attempts: z.number().int().min(0).max(300),
-        durationMs: z.number().int().min(0).max(30 * 60 * 1000),
+        durationMs: z
+          .number()
+          .int()
+          .min(0)
+          .max(30 * 60 * 1000),
       })
       .parse(input),
   )
@@ -250,13 +254,21 @@ export const submitQuizResult = createServerFn({ method: "POST" })
       .object({
         clientToken: z.string().uuid(),
         category: z.string().min(2).max(24),
-        durationMs: z.number().int().min(0).max(30 * 60 * 1000),
+        durationMs: z
+          .number()
+          .int()
+          .min(0)
+          .max(30 * 60 * 1000),
         answers: z
           .array(
             z.object({
               questionId: z.string().uuid(),
               choice: z.number().int().min(-1).max(5),
-              timeMs: z.number().int().min(0).max(QUIZ_QUESTION_MS + 2000),
+              timeMs: z
+                .number()
+                .int()
+                .min(0)
+                .max(QUIZ_QUESTION_MS + 2000),
             }),
           )
           .min(1)
@@ -331,7 +343,11 @@ export const submitCheckersResult = createServerFn({ method: "POST" })
         moves: z.number().int().min(0).max(500),
         capturedByPlayer: z.number().int().min(0).max(12),
         capturedByAi: z.number().int().min(0).max(12),
-        durationMs: z.number().int().min(0).max(60 * 60 * 1000),
+        durationMs: z
+          .number()
+          .int()
+          .min(0)
+          .max(60 * 60 * 1000),
       })
       .parse(input),
   )

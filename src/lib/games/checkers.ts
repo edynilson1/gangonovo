@@ -33,12 +33,7 @@ export function opponent(player: Player): Player {
 }
 
 export function isInside(pos: Pos): boolean {
-  return (
-    pos.row >= 0 &&
-    pos.row < BOARD_SIZE &&
-    pos.col >= 0 &&
-    pos.col < BOARD_SIZE
-  );
+  return pos.row >= 0 && pos.row < BOARD_SIZE && pos.col >= 0 && pos.col < BOARD_SIZE;
 }
 
 export function isDarkSquare(pos: Pos): boolean {
@@ -50,15 +45,12 @@ export function samePos(a: Pos, b: Pos): boolean {
 }
 
 function cloneBoard(board: Board): Board {
-  return board.map(row =>
-    row.map(piece => (piece ? { ...piece } : null))
-  );
+  return board.map((row) => row.map((piece) => (piece ? { ...piece } : null)));
 }
 
 export function createInitialBoard(): Board {
-  const board: Board = Array.from(
-    { length: BOARD_SIZE },
-    () => Array<Piece | null>(BOARD_SIZE).fill(null)
+  const board: Board = Array.from({ length: BOARD_SIZE }, () =>
+    Array<Piece | null>(BOARD_SIZE).fill(null),
   );
 
   // Peças pretas
@@ -98,10 +90,7 @@ function forwardDirection(player: Player): number {
   return player === "black" ? 1 : -1;
 }
 
-function simpleStepsFrom(
-  board: Board,
-  from: Pos
-): Step[] {
+function simpleStepsFrom(board: Board, from: Pos): Step[] {
   const piece = board[from.row]?.[from.col];
 
   if (!piece) {
@@ -121,35 +110,32 @@ function simpleStepsFrom(
       {
         row: from.row + direction,
         col: from.col + 1,
-      }
+      },
     );
   } else {
     directions.push(
       { row: from.row - 1, col: from.col - 1 },
       { row: from.row - 1, col: from.col + 1 },
       { row: from.row + 1, col: from.col - 1 },
-      { row: from.row + 1, col: from.col + 1 }
+      { row: from.row + 1, col: from.col + 1 },
     );
   }
 
   return directions
     .filter(isInside)
     .filter(isDarkSquare)
-    .filter(pos => {
+    .filter((pos) => {
       const r = board[pos.row];
       return r ? r[pos.col] === null : false;
     })
-    .map(to => ({
+    .map((to) => ({
       from,
       to,
       capture: null,
     }));
 }
 
-function captureStepsFrom(
-  board: Board,
-  from: Pos
-): Step[] {
+function captureStepsFrom(board: Board, from: Pos): Step[] {
   const piece = board[from.row]?.[from.col];
 
   if (!piece) {
@@ -169,14 +155,14 @@ function captureStepsFrom(
       {
         row: direction,
         col: 1,
-      }
+      },
     );
   } else {
     directions.push(
       { row: -1, col: -1 },
       { row: -1, col: 1 },
       { row: 1, col: -1 },
-      { row: 1, col: 1 }
+      { row: 1, col: 1 },
     );
   }
 
@@ -211,11 +197,7 @@ function captureStepsFrom(
     const capturedPiece = capturedRow[captured.col];
     const destinationPiece = destinationRow[destination.col];
 
-    if (
-      capturedPiece &&
-      capturedPiece.player !== piece.player &&
-      destinationPiece === null
-    ) {
+    if (capturedPiece && capturedPiece.player !== piece.player && destinationPiece === null) {
       result.push({
         from,
         to: destination,
@@ -227,13 +209,9 @@ function captureStepsFrom(
   return result;
 }
 
-export function legalSteps(
-  board: Board,
-  player: Player,
-  chainFrom?: Pos | null
-): Step[] {
+export function legalSteps(board: Board, player: Player, chainFrom?: Pos | null): Step[] {
   if (chainFrom) {
-    return captureStepsFrom(board, chainFrom).filter(step => {
+    return captureStepsFrom(board, chainFrom).filter((step) => {
       const piece = board[step.from.row]?.[step.from.col];
       return piece?.player === player;
     });
@@ -250,9 +228,7 @@ export function legalSteps(
         continue;
       }
 
-      captures.push(
-        ...captureStepsFrom(board, { row, col })
-      );
+      captures.push(...captureStepsFrom(board, { row, col }));
     }
   }
 
@@ -271,9 +247,7 @@ export function legalSteps(
         continue;
       }
 
-      moves.push(
-        ...simpleStepsFrom(board, { row, col })
-      );
+      moves.push(...simpleStepsFrom(board, { row, col }));
     }
   }
 
@@ -285,27 +259,14 @@ export function findLegalStep(
   player: Player,
   from: Pos,
   to: Pos,
-  chainFrom?: Pos | null
+  chainFrom?: Pos | null,
 ): Step | null {
-  const steps = legalSteps(
-    board,
-    player,
-    chainFrom
-  );
+  const steps = legalSteps(board, player, chainFrom);
 
-  return (
-    steps.find(
-      step =>
-        samePos(step.from, from) &&
-        samePos(step.to, to)
-    ) ?? null
-  );
+  return steps.find((step) => samePos(step.from, from) && samePos(step.to, to)) ?? null;
 }
 
-export function applyStep(
-  board: Board,
-  step: Step
-): MoveResult {
+export function applyStep(board: Board, step: Step): MoveResult {
   const next = cloneBoard(board);
 
   const fromRow = next[step.from.row];
@@ -338,19 +299,15 @@ export function applyStep(
 
   if (
     piece.type === "man" &&
-    (
-      (piece.player === "white" && step.to.row === 0) ||
-      (piece.player === "black" && step.to.row === 7)
-    )
+    ((piece.player === "white" && step.to.row === 0) ||
+      (piece.player === "black" && step.to.row === 7))
   ) {
     piece.type = "king";
     promoted = true;
   }
 
   const continues =
-    step.capture !== null &&
-    !promoted &&
-    captureStepsFrom(next, step.to).length > 0;
+    step.capture !== null && !promoted && captureStepsFrom(next, step.to).length > 0;
 
   return {
     board: next,
@@ -359,17 +316,9 @@ export function applyStep(
   };
 }
 
-export type GameStatus =
-  | "playing"
-  | "black_won"
-  | "white_won"
-  | "draw";
+export type GameStatus = "playing" | "black_won" | "white_won" | "draw";
 
-export function gameStatus(
-  board: Board,
-  currentPlayer: Player,
-  idleMoves = 0
-): GameStatus {
+export function gameStatus(board: Board, currentPlayer: Player, idleMoves = 0): GameStatus {
   let blackPieces = 0;
   let whitePieces = 0;
 
@@ -396,9 +345,7 @@ export function gameStatus(
   const legal = legalSteps(board, currentPlayer);
 
   if (legal.length === 0) {
-    return currentPlayer === "black"
-      ? "white_won"
-      : "black_won";
+    return currentPlayer === "black" ? "white_won" : "black_won";
   }
 
   if (idleMoves >= 40) {
@@ -427,10 +374,7 @@ export function isBoard(value: unknown): value is Board {
         continue;
       }
 
-      if (
-        typeof piece !== "object" ||
-        piece === null
-      ) {
+      if (typeof piece !== "object" || piece === null) {
         return false;
       }
 
@@ -440,10 +384,8 @@ export function isBoard(value: unknown): value is Board {
       const typeVal = p["type"];
 
       if (
-        (playerVal !== "white" &&
-          playerVal !== "black") ||
-        (typeVal !== "man" &&
-          typeVal !== "king")
+        (playerVal !== "white" && playerVal !== "black") ||
+        (typeVal !== "man" && typeVal !== "king")
       ) {
         return false;
       }

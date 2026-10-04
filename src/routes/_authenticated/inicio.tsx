@@ -11,7 +11,10 @@ export const Route = createFileRoute("/_authenticated/inicio")({
   head: () => ({
     meta: [
       { title: "Início — XP Arena" },
-      { name: "description", content: "O teu XP, posição no ranking e acesso rápido aos minijogos." },
+      {
+        name: "description",
+        content: "O teu XP, posição no ranking e acesso rápido aos minijogos.",
+      },
       { property: "og:title", content: "Início — XP Arena" },
       { property: "og:description", content: "Acompanha o teu XP e escolhe o próximo jogo." },
     ],
@@ -47,20 +50,14 @@ function HomeContent() {
   return (
     <div className="space-y-6">
       <header className="arena-card flex items-center gap-3 p-4">
-        <img
-          src={profile?.avatar_url ?? ""}
-          alt=""
-          className="size-14 rounded-full bg-surface-2"
-        />
+        <img src={profile?.avatar_url ?? ""} alt="" className="size-14 rounded-full bg-surface-2" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-semibold">{profile?.display_name}</p>
           <p className="truncate text-xs text-muted-foreground">@{profile?.username}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-muted-foreground">Ranking</p>
-          <p className="text-lg font-bold text-primary">
-            {data?.rank ? `#${data.rank}` : "—"}
-          </p>
+          <p className="text-lg font-bold text-primary">{data?.rank ? `#${data.rank}` : "—"}</p>
         </div>
       </header>
 
@@ -89,7 +86,11 @@ function HomeContent() {
         </h2>
         <div className="grid gap-3">
           {GAMES.map(({ to, title, desc, icon: Icon }) => (
-            <Link key={to} to={to} className="arena-card flex items-center gap-3 p-4 active:scale-[0.99]">
+            <Link
+              key={to}
+              to={to}
+              className="arena-card flex items-center gap-3 p-4 active:scale-[0.99]"
+            >
               <span className="arena-gradient grid size-11 place-items-center rounded-xl">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
@@ -144,7 +145,11 @@ function HomeContent() {
             {leaderboard.data.top.slice(0, 5).map((entry) => (
               <li key={entry.id} className="flex items-center gap-3 px-4 py-3">
                 <span className="w-6 text-sm font-bold text-muted-foreground">{entry.rank}</span>
-                <img src={entry.avatar_url ?? ""} alt="" className="size-8 rounded-full bg-surface-2" />
+                <img
+                  src={entry.avatar_url ?? ""}
+                  alt=""
+                  className="size-8 rounded-full bg-surface-2"
+                />
                 <span className="min-w-0 flex-1 truncate text-sm">{entry.display_name}</span>
                 <span className="text-sm font-semibold">{entry.total_xp} XP</span>
               </li>

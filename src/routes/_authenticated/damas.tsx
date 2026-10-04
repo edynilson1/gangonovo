@@ -199,7 +199,10 @@ function CheckersGame() {
     }
 
     const piece = board[row]?.[col];
-    if (piece?.player === "black" && playerLegalSteps.some((s) => s.from.row === row && s.from.col === col)) {
+    if (
+      piece?.player === "black" &&
+      playerLegalSteps.some((s) => s.from.row === row && s.from.col === col)
+    ) {
       setSelected({ row, col });
     } else {
       setSelected(null);
@@ -210,7 +213,11 @@ function CheckersGame() {
     <div className="arena-hero min-h-screen">
       <main className="arena-safe-bottom mx-auto w-full max-w-md px-4 pt-6">
         <div className="mb-4 flex items-center gap-2">
-          <Link to="/jogos" aria-label="Voltar aos jogos" className="rounded-lg p-2 hover:bg-surface-2">
+          <Link
+            to="/jogos"
+            aria-label="Voltar aos jogos"
+            className="rounded-lg p-2 hover:bg-surface-2"
+          >
             <ArrowLeft className="size-5" aria-hidden="true" />
           </Link>
           <h1 className="text-xl font-bold">Damas</h1>
@@ -219,8 +226,8 @@ function CheckersGame() {
         {phase === "setup" && (
           <div className="space-y-6">
             <p className="text-sm text-muted-foreground">
-              Tabuleiro 8x8 contra o computador. A captura é obrigatória e as peças promovem a dama na
-              última linha.
+              Tabuleiro 8x8 contra o computador. A captura é obrigatória e as peças promovem a dama
+              na última linha.
             </p>
             <div>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -266,7 +273,11 @@ function CheckersGame() {
               mySide="black"
             />
 
-            <Button variant="outline" className="mt-5 h-11 w-full" onClick={() => void finish("loss")}>
+            <Button
+              variant="outline"
+              className="mt-5 h-11 w-full"
+              onClick={() => void finish("loss")}
+            >
               Desistir
             </Button>
           </>
@@ -287,7 +298,9 @@ function CheckersGame() {
                 <p className="animate-xp-pop mt-2 text-4xl font-bold text-primary">
                   +{reward?.xp ?? 0} XP
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">XP total: {reward?.totalXp ?? 0}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  XP total: {reward?.totalXp ?? 0}
+                </p>
                 <dl className="mt-5 grid grid-cols-3 gap-3 text-sm">
                   <div className="rounded-xl bg-surface-2 p-3">
                     <dt className="text-xs text-muted-foreground">Lances</dt>
@@ -306,7 +319,11 @@ function CheckersGame() {
                   <Button className="h-12 w-full" onClick={startGame}>
                     <RotateCcw className="mr-2 size-4" aria-hidden="true" /> Jogar novamente
                   </Button>
-                  <Button variant="outline" className="h-11 w-full" onClick={() => setPhase("setup")}>
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full"
+                    onClick={() => setPhase("setup")}
+                  >
                     Mudar dificuldade
                   </Button>
                 </div>

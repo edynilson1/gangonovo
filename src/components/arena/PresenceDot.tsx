@@ -16,9 +16,19 @@ export function resolvePresence(
   return row.status === "in_game" ? "in_game" : row.status === "online" ? "online" : "offline";
 }
 
-export function PresenceDot({ status, withLabel = false }: { status: PresenceStatus; withLabel?: boolean }) {
+export function PresenceDot({
+  status,
+  withLabel = false,
+}: {
+  status: PresenceStatus;
+  withLabel?: boolean;
+}) {
   const color =
-    status === "online" ? "bg-success" : status === "in_game" ? "bg-warning" : "bg-muted-foreground";
+    status === "online"
+      ? "bg-success"
+      : status === "in_game"
+        ? "bg-warning"
+        : "bg-muted-foreground";
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
       <span className={`size-2 rounded-full ${color}`} aria-hidden="true" />

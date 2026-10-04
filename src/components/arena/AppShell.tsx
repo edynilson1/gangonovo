@@ -15,7 +15,7 @@ type Props = {
 export function AppShell({ children, requireProfile = true, hideNav = false }: Props) {
   const navigate = useNavigate();
   const { data, isLoading, isError, error, refetch } = useMyProfile();
-  
+
   // ADICIONE ESTE LOG PARA VERMOS O QUE O SUPABASE ESTÁ A DEVOLVER:
   console.log("AppShell - Dados recebidos do perfil:", data);
 
@@ -30,7 +30,9 @@ export function AppShell({ children, requireProfile = true, hideNav = false }: P
 
   return (
     <div className="min-h-screen arena-hero">
-      <main className={`mx-auto w-full max-w-md px-4 pt-6 ${hideNav ? "pb-8" : "arena-safe-bottom"}`}>
+      <main
+        className={`mx-auto w-full max-w-md px-4 pt-6 ${hideNav ? "pb-8" : "arena-safe-bottom"}`}
+      >
         {isLoading ? (
           <div className="space-y-4" aria-busy="true">
             <Skeleton className="h-28 w-full rounded-2xl" />

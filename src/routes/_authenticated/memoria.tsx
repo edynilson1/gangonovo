@@ -21,10 +21,14 @@ export const Route = createFileRoute("/_authenticated/memoria")({
       { title: "Jogo da Memória — XP Arena" },
       {
         name: "description",
-        content: "Encontra todos os pares no menor tempo e com menos tentativas para ganhar mais XP.",
+        content:
+          "Encontra todos os pares no menor tempo e com menos tentativas para ganhar mais XP.",
       },
       { property: "og:title", content: "Jogo da Memória — XP Arena" },
-      { property: "og:description", content: "Pares por categoria, com tempo e precisão a valer XP." },
+      {
+        property: "og:description",
+        content: "Pares por categoria, com tempo e precisão a valer XP.",
+      },
     ],
   }),
   component: MemoryGame,
@@ -113,9 +117,7 @@ function MemoryGame() {
     setAttempts(totalAttempts);
 
     if (first.value === second.value) {
-      const updated = deck.map((c) =>
-        c.value === first.value ? { ...c, matched: true } : c,
-      );
+      const updated = deck.map((c) => (c.value === first.value ? { ...c, matched: true } : c));
       const pairsFound = found + 1;
       setTimeout(() => {
         setDeck(updated);
@@ -138,7 +140,11 @@ function MemoryGame() {
     <div className="arena-hero min-h-screen">
       <main className="arena-safe-bottom mx-auto w-full max-w-md px-4 pt-6">
         <div className="mb-4 flex items-center gap-2">
-          <Link to="/jogos" aria-label="Voltar aos jogos" className="rounded-lg p-2 hover:bg-surface-2">
+          <Link
+            to="/jogos"
+            aria-label="Voltar aos jogos"
+            className="rounded-lg p-2 hover:bg-surface-2"
+          >
             <ArrowLeft className="size-5" aria-hidden="true" />
           </Link>
           <h1 className="text-xl font-bold">Jogo da Memória</h1>
@@ -282,7 +288,11 @@ function MemoryGame() {
                   <Button className="h-12 w-full" onClick={startGame}>
                     <RotateCcw className="mr-2 size-4" aria-hidden="true" /> Jogar novamente
                   </Button>
-                  <Button variant="outline" className="h-11 w-full" onClick={() => setPhase("setup")}>
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full"
+                    onClick={() => setPhase("setup")}
+                  >
                     Mudar categoria
                   </Button>
                 </div>

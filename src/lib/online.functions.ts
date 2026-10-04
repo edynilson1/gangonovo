@@ -2,18 +2,22 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 import {
-  applyMove,
-  boardFromJson,
-  boardToJson,
+  applyStep,
   createInitialBoard,
-  findLegalMove,
+  findLegalStep,
   gameStatus,
-  isIdleMove,
+  isBoard,
+  legalSteps,
   opponent,
+  type Board,
+  type Pos,
   type Player,
 } from "@/lib/games/checkers";
 import { checkersXp } from "@/lib/xp-rules";
+
+type RoomSide = "p" | "a";
 
 export type RoomPlayer = {
   id: string;
@@ -28,14 +32,14 @@ export type RoomRow = {
   host_id: string;
   guest_id: string | null;
   status: "waiting" | "playing" | "finished" | "cancelled";
-  board: unknown;
-  turn: Player;
-  host_side: Player;
+  board: Json;
+  turn: RoomSide;
+  host_side: RoomSide;
   move_count: number;
   idle_moves: number;
   captures_p: number;
   captures_a: number;
-  last_move: unknown;
+  last_move: Json | null;
   winner_id: string | null;
   outcome: "win" | "draw" | "abandon" | null;
   started_at: string | null;
@@ -54,6 +58,42 @@ const posSchema = z.object({
   row: z.number().int().min(0).max(7),
   col: z.number().int().min(0).max(7),
 });
+
+function toPlayer(side: string): Player {
+  if (side === "p") return "black";
+  if (side === "a") return "white";
+  throw new Error("Lado da partida inválido.");
+}
+
+function toRoomSide(player: Player): RoomSide {
+  return player === "black" ? "p" : "a";
+}
+
+function boardFromJson(value: Json): Board {
+  if (!isBoard(value)) throw new Error("O tabuleiro da partida é inválido.");
+  return value;
+}
+
+function boardToJson(board: Board): Json {
+  return board;
+}
+
+function chainedCaptureFrom(value: Json | null, board: Board, player: Player): Pos | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  const previousMove = value as { [key: string]: Json | undefined };
+  const destination = posSchema.safeParse(previousMove["to"]);
+  const captures = previousMove["captures"];
+  if (!destination.success || !Array.isArray(captures) || captures.length === 0) {
+    return null;
+  }
+
+  const piece = board[destination.data.row]?.[destination.data.col];
+  if (piece?.player !== player) return null;
+
+  const availableSteps = legalSteps(board, player, destination.data);
+  return availableSteps.some((step) => step.capture) ? destination.data : null;
+}
 
 /* --------------------------- PRESENÇA --------------------------- */
 
@@ -89,9 +129,14 @@ export const listRooms = createServerFn({ method: "GET" })
     const mine =
       rooms.find((r) => r.host_id === context.userId || r.guest_id === context.userId) ?? null;
 
-    const ids = [...new Set(rooms.flatMap((r) => [r.host_id, r.guest_id].filter(Boolean) as string[]))];
+    const ids = [
+      ...new Set(rooms.flatMap((r) => [r.host_id, r.guest_id].filter(Boolean) as string[])),
+    ];
     const { data: presence } = ids.length
-      ? await context.supabase.from("user_presence").select("user_id, status, last_seen_at").in("user_id", ids)
+      ? await context.supabase
+          .from("user_presence")
+          .select("user_id, status, last_seen_at")
+          .in("user_id", ids)
       : { data: [] as { user_id: string; status: string; last_seen_at: string }[] };
 
     return { rooms, myRoomId: mine?.id ?? null, presence: presence ?? [], myId: context.userId };
@@ -195,7 +240,8 @@ export const leaveRoom = createServerFn({ method: "POST" })
       .eq("id", data.roomId)
       .maybeSingle();
     if (!room) throw new Error("Sala não encontrada.");
-    if (room.host_id !== userId && room.guest_id !== userId) throw new Error("Não estás nesta sala.");
+    if (room.host_id !== userId && room.guest_id !== userId)
+      throw new Error("Não estás nesta sala.");
 
     if (room.status === "waiting") {
       await supabaseAdmin
@@ -232,48 +278,51 @@ export const playMove = createServerFn({ method: "POST" })
     if (!room) throw new Error("Sala não encontrada.");
     if (room.status !== "playing") throw new Error("A partida não está a decorrer.");
 
+    const hostSide = toPlayer(room.host_side);
     const mySide: Player | null =
-      room.host_id === userId
-        ? (room.host_side as Player)
-        : room.guest_id === userId
-          ? opponent(room.host_side as Player)
-          : null;
+      room.host_id === userId ? hostSide : room.guest_id === userId ? opponent(hostSide) : null;
     if (!mySide) throw new Error("Não estás nesta partida.");
-    if (room.turn !== mySide) throw new Error("Não é a tua vez.");
+    if (room.turn !== toRoomSide(mySide)) throw new Error("Não é a tua vez.");
 
     const board = boardFromJson(room.board);
     // Validação completa das regras no servidor: captura obrigatória incluída.
-    const move = findLegalMove(board, mySide, data.from, data.to);
+    const chainFrom = chainedCaptureFrom(room.last_move, board, mySide);
+    const move = findLegalStep(board, mySide, data.from, data.to, chainFrom);
     if (!move) throw new Error("Jogada inválida.");
 
-    const idle = isIdleMove(board, move);
-    const nextBoard = boardToJson(applyMove(board, move));
-    const nextTurn = opponent(mySide);
+    const result = applyStep(board, move);
+    const nextBoard = result.board;
+    const nextTurn = result.continues ? mySide : opponent(mySide);
 
-    const captures = move.captures.length;
+    const captures = move.capture ? 1 : 0;
+    const idleMoves = move.capture ? 0 : room.idle_moves + 1;
     const updated = {
       board: nextBoard as never,
-      turn: nextTurn,
+      turn: toRoomSide(nextTurn),
       move_count: room.move_count + 1,
-      idle_moves: idle ? room.idle_moves + 1 : 0,
-      captures_p: mySide === "p" ? room.captures_p + captures : room.captures_p,
-      captures_a: mySide === "a" ? room.captures_a + captures : room.captures_a,
-      last_move: { from: move.from, to: move.to, captures: move.captures } as never,
+      idle_moves: idleMoves,
+      captures_p: toRoomSide(mySide) === "p" ? room.captures_p + captures : room.captures_p,
+      captures_a: toRoomSide(mySide) === "a" ? room.captures_a + captures : room.captures_a,
+      last_move: {
+        from: move.from,
+        to: move.to,
+        captures: move.capture ? [move.capture] : [],
+      } as never,
       updated_at: new Date().toISOString(),
     };
 
     await supabaseAdmin.from("checkers_rooms").update(updated).eq("id", room.id);
 
-    const status = gameStatus(boardFromJson(nextBoard), nextTurn, updated.idle_moves);
-    if (status.over) {
-      const winnerSide = status.winner;
-      const hostSide = room.host_side as Player;
+    const status = gameStatus(nextBoard, nextTurn, idleMoves);
+    const finished = status !== "playing";
+    if (finished) {
+      const winnerSide = status === "black_won" ? "black" : status === "white_won" ? "white" : null;
       const winnerId =
         winnerSide === null ? null : winnerSide === hostSide ? room.host_id : room.guest_id;
       await finishRoom({ ...room, ...updated }, winnerId, winnerSide === null ? "draw" : "win");
     }
 
-    return { ok: true, finished: status.over };
+    return { ok: true, finished };
   });
 
 type RoomState = {
@@ -288,7 +337,11 @@ type RoomState = {
 };
 
 /** Fecha a partida e atribui XP no servidor aos dois jogadores. */
-async function finishRoom(room: RoomState, winnerId: string | null, outcome: "win" | "draw" | "abandon") {
+async function finishRoom(
+  room: RoomState,
+  winnerId: string | null,
+  outcome: "win" | "draw" | "abandon",
+) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { recordSessionQuiet } = await import("@/lib/match.server");
 
@@ -307,7 +360,7 @@ async function finishRoom(room: RoomState, winnerId: string | null, outcome: "wi
   const durationMs = room.started_at
     ? Math.max(0, finishedAt.getTime() - new Date(room.started_at).getTime())
     : 0;
-  const hostSide = room.host_side as Player;
+  const hostSide = toPlayer(room.host_side);
   const participants = [room.host_id, room.guest_id].filter(Boolean) as string[];
 
   for (const playerId of participants) {
@@ -318,8 +371,8 @@ async function finishRoom(room: RoomState, winnerId: string | null, outcome: "wi
       moves: room.move_count,
       durationMs,
       difficulty: "online" as const,
-      capturedByPlayer: side === "p" ? room.captures_p : room.captures_a,
-      capturedByAi: side === "p" ? room.captures_a : room.captures_p,
+      capturedByPlayer: toRoomSide(side) === "p" ? room.captures_p : room.captures_a,
+      capturedByAi: toRoomSide(side) === "p" ? room.captures_a : room.captures_p,
     };
     const { xp, score } = checkersXp(perf);
     await recordSessionQuiet({
@@ -355,9 +408,7 @@ export const listMessages = createServerFn({ method: "POST" })
 export const sendMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ roomId: z.string().uuid(), body: z.string().trim().min(1).max(280) })
-      .parse(input),
+    z.object({ roomId: z.string().uuid(), body: z.string().trim().min(1).max(280) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

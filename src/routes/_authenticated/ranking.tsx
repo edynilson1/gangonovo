@@ -67,7 +67,11 @@ function RankingContent() {
                 >
                   {entry.rank}
                 </span>
-                <img src={entry.avatar_url ?? ""} alt="" className="size-9 rounded-full bg-surface-2" />
+                <img
+                  src={entry.avatar_url ?? ""}
+                  alt=""
+                  className="size-9 rounded-full bg-surface-2"
+                />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{entry.display_name}</span>
                   <span className="block truncate text-xs text-muted-foreground">

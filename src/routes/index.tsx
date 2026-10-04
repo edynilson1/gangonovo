@@ -44,7 +44,8 @@ function Landing() {
 
         <section className="py-10">
           <p className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-muted-foreground">
-            <Sparkles className="size-3.5 text-primary" aria-hidden="true" /> XP real, ranking global
+            <Sparkles className="size-3.5 text-primary" aria-hidden="true" /> XP real, ranking
+            global
           </p>
           <h1 className="mt-4 text-4xl font-bold leading-tight">
             Joga rápido.

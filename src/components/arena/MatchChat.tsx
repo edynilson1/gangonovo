@@ -13,7 +13,13 @@ export type ChatMessage = {
   avatarUrl?: string | null;
 };
 
-export const QUICK_MESSAGES = ["Boa jogada! 👏", "Boa sorte 🍀", "Ups… 😅", "Estou a pensar 🤔", "GG 🔥"];
+export const QUICK_MESSAGES = [
+  "Boa jogada! 👏",
+  "Boa sorte 🍀",
+  "Ups… 😅",
+  "Estou a pensar 🤔",
+  "GG 🔥",
+];
 
 type Props = {
   messages: ChatMessage[];
@@ -22,7 +28,12 @@ type Props = {
   title?: string;
 };
 
-export function MatchChat({ messages, onSend, disabled = false, title = "Chat da partida" }: Props) {
+export function MatchChat({
+  messages,
+  onSend,
+  disabled = false,
+  title = "Chat da partida",
+}: Props) {
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -58,7 +69,11 @@ export function MatchChat({ messages, onSend, disabled = false, title = "Chat da
           messages.map((m) => (
             <div key={m.id} className={`flex gap-2 ${m.mine ? "flex-row-reverse" : ""}`}>
               {m.avatarUrl ? (
-                <img src={m.avatarUrl} alt="" className="mt-0.5 size-7 shrink-0 rounded-full bg-surface-2" />
+                <img
+                  src={m.avatarUrl}
+                  alt=""
+                  className="mt-0.5 size-7 shrink-0 rounded-full bg-surface-2"
+                />
               ) : (
                 <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-surface-2 text-xs">
                   {m.authorName.slice(0, 1).toUpperCase()}
@@ -74,9 +89,7 @@ export function MatchChat({ messages, onSend, disabled = false, title = "Chat da
                 </p>
                 <p
                   className={`mt-0.5 inline-block rounded-2xl px-3 py-1.5 text-sm ${
-                    m.mine
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-surface-2 text-foreground"
+                    m.mine ? "bg-primary text-primary-foreground" : "bg-surface-2 text-foreground"
                   }`}
                 >
                   {m.body}
@@ -118,7 +131,12 @@ export function MatchChat({ messages, onSend, disabled = false, title = "Chat da
           aria-label="Mensagem"
           className="h-10"
         />
-        <Button type="submit" size="icon" className="size-10 shrink-0" disabled={disabled || sending}>
+        <Button
+          type="submit"
+          size="icon"
+          className="size-10 shrink-0"
+          disabled={disabled || sending}
+        >
           <Send className="size-4" aria-hidden="true" />
           <span className="sr-only">Enviar</span>
         </Button>

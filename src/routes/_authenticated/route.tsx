@@ -1,14 +1,8 @@
-import {
-  createFileRoute,
-  Outlet,
-  redirect,
-} from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute(
-  "/_authenticated"
-)({
+export const Route = createFileRoute("/_authenticated")({
   /*
    * O projeto está sendo executado no navegador.
    * A autenticação do Supabase também é feita no navegador.
@@ -20,6 +14,7 @@ export const Route = createFileRoute(
    * /_authenticated.
    */
   beforeLoad: async () => {
+    // eslint-disable-next-line no-useless-catch
     try {
       /*
        * Primeiro recuperamos a sessão existente.
@@ -33,20 +28,13 @@ export const Route = createFileRoute(
        * - refresh da página
        */
 
-      const {
-        data: sessionData,
-        error: sessionError,
-      } =
-        await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
       /*
        * Não existe sessão.
        */
 
-      if (
-        sessionError ||
-        !sessionData.session
-      ) {
+      if (sessionError || !sessionData.session) {
         throw redirect({
           to: "/auth",
         });
@@ -57,20 +45,13 @@ export const Route = createFileRoute(
        * diretamente no Supabase.
        */
 
-      const {
-        data: userData,
-        error: userError,
-      } =
-        await supabase.auth.getUser();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
 
       /*
        * Sessão inválida ou utilizador inexistente.
        */
 
-      if (
-        userError ||
-        !userData.user
-      ) {
+      if (userError || !userData.user) {
         throw redirect({
           to: "/auth",
         });
