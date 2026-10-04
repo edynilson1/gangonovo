@@ -115,20 +115,24 @@ export const saveProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { error } = await supabase.from("profiles").upsert({
-      id: userId,
-      username: data.username,
-      display_name: data.displayName,
-      avatar_url: data.avatarUrl,
-      ...(data.countryCode ? { country_code: data.countryCode } : {}),
-      updated_at: new Date().toISOString(),
-    }); // Sem .eq() aqui!
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .upsert({
+        id: userId,
+        username: data.username,
+        display_name: data.displayName,
+        avatar_url: data.avatarUrl,
+        ...(data.countryCode ? { country_code: data.countryCode } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .select("id, username, display_name, avatar_url, country_code, total_xp, wins, created_at")
+      .single();
 
     if (error) {
       if (error.code === "23505") throw new Error("Esse nome de utilizador já está em uso.");
       throw new Error("Não foi possível guardar o perfil.");
     }
-    return { ok: true };
+    return { profile: profile as ProfileRow };
   });
 
 export const getLeaderboard = createServerFn({ method: "GET" })

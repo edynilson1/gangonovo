@@ -33,7 +33,7 @@ function ProfileSetup() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, refetch } = useMyProfile();
+  const { data, isLoading } = useMyProfile();
 
   const [avatar, setAvatar] = useState(AVATAR_PRESETS[0]!);
   const [username, setUsername] = useState("");
@@ -87,10 +87,9 @@ function ProfileSetup() {
       const normalizedUsername = username.trim().toLowerCase();
       const normalizedDisplayName = displayName.trim();
 
-      /*
-       * 1. Guarda realmente no Supabase.
-       */
-      await saveProfile({
+      await queryClient.cancelQueries({ queryKey: ["arena", "me"] });
+
+      const savedProfile = await saveProfile({
         data: {
           username: normalizedUsername,
           displayName: normalizedDisplayName,
@@ -98,25 +97,12 @@ function ProfileSetup() {
         },
       });
 
-      /*
-       * 2. Busca novamente os dados diretamente do servidor.
-       *
-       * Isto é mais seguro do que construir manualmente
-       * um objeto de perfil no frontend.
-       */
-      const freshProfile = await refetch();
+      queryClient.setQueryData(["arena", "me"], {
+        profile: savedProfile.profile,
+        rank: data?.rank ?? null,
+        recentXp: data?.recentXp ?? [],
+      });
 
-      /*
-       * 3. Atualiza a cache com os dados realmente devolvidos
-       * pelo backend.
-       */
-      if (freshProfile.data) {
-        queryClient.setQueryData(["arena", "me"], freshProfile.data);
-      }
-
-      /*
-       * 4. Só agora navegamos para o início.
-       */
       toast.success("Perfil pronto! Bem-vindo à arena.");
 
       await navigate({

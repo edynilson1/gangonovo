@@ -16,9 +16,6 @@ export function AppShell({ children, requireProfile = true, hideNav = false }: P
   const navigate = useNavigate();
   const { data, isLoading, isError, error, refetch } = useMyProfile();
 
-  // ADICIONE ESTE LOG PARA VERMOS O QUE O SUPABASE ESTÁ A DEVOLVER:
-  console.log("AppShell - Dados recebidos do perfil:", data);
-
   const profile = data?.profile;
   const hasUsername = Boolean(profile?.username);
   const needsSetup = requireProfile && !isLoading && !!data && !hasUsername;
