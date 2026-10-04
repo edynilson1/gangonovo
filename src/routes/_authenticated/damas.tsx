@@ -5,19 +5,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { BottomNav } from "@/components/arena/BottomNav";
+import { CheckersBoard } from "@/components/arena/CheckersBoard";
 import { useProfileGate } from "@/hooks/useProfileGate";
 import { Button } from "@/components/ui/button";
 import { submitCheckersResult } from "@/lib/arena.functions";
 import {
-  applyMove,
+  applyStep,
   BOARD_SIZE,
-  chooseAiMove,
-  countPieces,
   createInitialBoard,
-  legalMoves,
+  gameStatus,
+  legalSteps,
+  findLegalStep,
   type Board,
-  type Difficulty,
-  type Move,
+  type Step,
   type Pos,
 } from "@/lib/games/checkers";
 
@@ -38,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/damas")({
 
 type Phase = "setup" | "playing" | "result";
 type GameResult = "win" | "loss" | "draw";
+type Difficulty = "facil" | "medio" | "dificil";
 
 const DIFFICULTIES: { id: Difficulty; label: string }[] = [
   { id: "facil", label: "Fácil" },
@@ -52,7 +53,8 @@ function CheckersGame() {
   const [difficulty, setDifficulty] = useState<Difficulty>("facil");
   const [board, setBoard] = useState<Board>(createInitialBoard);
   const [selected, setSelected] = useState<Pos | null>(null);
-  const [turn, setTurn] = useState<"p" | "a">("p");
+  const [turn, setTurn] = useState<"black" | "white">("black"); // Jogador é preto ("black")
+  const [chainFrom, setChainFrom] = useState<Pos | null>(null);
   const [moves, setMoves] = useState(0);
   const [capturedByPlayer, setCapturedByPlayer] = useState(0);
   const [capturedByAi, setCapturedByAi] = useState(0);
@@ -64,9 +66,9 @@ function CheckersGame() {
   const tokenRef = useRef("");
   const statsRef = useRef({ moves: 0, byPlayer: 0, byAi: 0 });
 
-  const playerMoves = turn === "p" ? legalMoves(board, "p") : [];
-  const selectableTargets = selected
-    ? playerMoves.filter((m) => m.from.row === selected.row && m.from.col === selected.col)
+  const playerLegalSteps = legalSteps(board, turn, chainFrom);
+  const selectedTargets = selected
+    ? playerLegalSteps.filter((s) => s.from.row === selected.row && s.from.col === selected.col)
     : [];
 
   const finish = useCallback(
@@ -100,7 +102,8 @@ function CheckersGame() {
   function startGame() {
     setBoard(createInitialBoard());
     setSelected(null);
-    setTurn("p");
+    setChainFrom(null);
+    setTurn("black");
     setMoves(0);
     setCapturedByPlayer(0);
     setCapturedByAi(0);
@@ -112,58 +115,91 @@ function CheckersGame() {
     setPhase("playing");
   }
 
-  function playMove(move: Move) {
-    const next = applyMove(board, move);
+  function executeStep(step: Step) {
+    const result = applyStep(board, step);
     statsRef.current.moves += 1;
-    statsRef.current.byPlayer += move.captures.length;
+    if (step.capture) {
+      if (turn === "black") {
+        statsRef.current.byPlayer += 1;
+        setCapturedByPlayer(statsRef.current.byPlayer);
+      } else {
+        statsRef.current.byAi += 1;
+        setCapturedByAi(statsRef.current.byAi);
+      }
+    }
+
     setMoves(statsRef.current.moves);
-    setCapturedByPlayer(statsRef.current.byPlayer);
-    setBoard(next);
+    setBoard(result.board);
+
+    // Verificar status do jogo
+    const status = gameStatus(result.board, turn === "black" ? "white" : "black");
+    if (status !== "playing") {
+      if (status === "black_won") {
+        void finish(turn === "black" ? "win" : "loss");
+      } else if (status === "white_won") {
+        void finish(turn === "black" ? "loss" : "win");
+      } else {
+        void finish("draw");
+      }
+      return;
+    }
+
+    // Captura múltipla contínua
+    if (result.continues) {
+      setChainFrom(step.to);
+      setSelected(step.to);
+      return;
+    }
+
+    setChainFrom(null);
     setSelected(null);
-    setTurn("a");
+    setTurn((prev) => (prev === "black" ? "white" : "black"));
   }
 
-  // Jogada do computador
+  // Turno do Computador (Brancas - "white")
   useEffect(() => {
-    if (phase !== "playing" || turn !== "a") return;
+    if (phase !== "playing" || turn !== "white") return;
+
     const timeout = setTimeout(() => {
-      const move = chooseAiMove(board, difficulty);
-      if (!move) {
+      const steps = legalSteps(board, "white");
+      if (steps.length === 0) {
         void finish("win");
         return;
       }
-      const next = applyMove(board, move);
-      statsRef.current.byAi += move.captures.length;
-      setCapturedByAi(statsRef.current.byAi);
-      setBoard(next);
-      setTurn("p");
-    }, 450);
-    return () => clearTimeout(timeout);
-  }, [phase, turn, board, difficulty, finish]);
 
-  // Fim de jogo
-  useEffect(() => {
-    if (phase !== "playing" || turn !== "p") return;
-    if (countPieces(board, "p") === 0) {
-      void finish("loss");
-      return;
-    }
-    if (countPieces(board, "a") === 0) {
-      void finish("win");
-      return;
-    }
-    if (legalMoves(board, "p").length === 0) void finish("loss");
-  }, [board, turn, phase, finish]);
+      // IA simples escolhe um lance aleatório válido (ou o primeiro de captura se houver)
+      const captureSteps = steps.filter((s) => s.capture !== null);
+      const pool = captureSteps.length > 0 ? captureSteps : steps;
+      const randomStep = pool[Math.floor(Math.random() * pool.length)];
+
+      if (randomStep) {
+        executeStep(randomStep);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [phase, turn, board, finish]);
 
   const handleSquare = (row: number, col: number) => {
-    if (phase !== "playing" || turn !== "p") return;
-    const target = selectableTargets.find((m) => m.to.row === row && m.to.col === col);
-    if (target) {
-      playMove(target);
+    if (phase !== "playing" || turn !== "black") return;
+
+    if (chainFrom) {
+      // Durante uma sequência de captura, só pode mover a mesma peça
+      const step = findLegalStep(board, "black", chainFrom, { row, col }, chainFrom);
+      if (step) {
+        executeStep(step);
+      }
       return;
     }
-    const piece = board[row]![col];
-    if (piece?.player === "p" && playerMoves.some((m) => m.from.row === row && m.from.col === col)) {
+
+    const target = selectedTargets.find((s) => s.to.row === row && s.to.col === col);
+    if (target) {
+      executeStep(target);
+      return;
+    }
+
+    const piece = board[row]?.[col];
+    if (piece?.player === "black" && playerLegalSteps.some((s) => s.from.row === row && s.from.col === col)) {
       setSelected({ row, col });
     } else {
       setSelected(null);
@@ -184,7 +220,7 @@ function CheckersGame() {
           <div className="space-y-6">
             <p className="text-sm text-muted-foreground">
               Tabuleiro 8x8 contra o computador. A captura é obrigatória e as peças promovem a dama na
-              última linha. O modo multijogador online chega numa próxima fase.
+              última linha.
             </p>
             <div>
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -214,52 +250,21 @@ function CheckersGame() {
         {phase === "playing" && (
           <>
             <div className="arena-card mb-4 flex items-center justify-between px-4 py-3 text-sm">
-              <span>{turn === "p" ? "A tua vez" : "Computador a pensar…"}</span>
+              <span>{turn === "black" ? "A tua vez" : "Computador a pensar…"}</span>
               <span>Lances {moves}</span>
               <span>
                 {capturedByPlayer} ✕ {capturedByAi}
               </span>
             </div>
 
-            <div
-              className="grid aspect-square w-full grid-cols-8 overflow-hidden rounded-xl border border-border"
-              role="grid"
-              aria-label="Tabuleiro de damas"
-            >
-              {Array.from({ length: BOARD_SIZE * BOARD_SIZE }).map((_, i) => {
-                const row = Math.floor(i / BOARD_SIZE);
-                const col = i % BOARD_SIZE;
-                const dark = (row + col) % 2 === 1;
-                const piece = board[row]![col];
-                const isSelected = selected?.row === row && selected?.col === col;
-                const isTarget = selectableTargets.some((m) => m.to.row === row && m.to.col === col);
-                return (
-                  <button
-                    key={i}
-                    onClick={() => handleSquare(row, col)}
-                    aria-label={`Casa ${row + 1}-${col + 1}${piece ? (piece.player === "p" ? ", tua peça" : ", peça do adversário") : ""}`}
-                    className={`relative grid place-items-center ${
-                      dark ? "bg-surface-2" : "bg-surface"
-                    } ${isSelected ? "ring-2 ring-inset ring-primary" : ""}`}
-                  >
-                    {piece && (
-                      <span
-                        className={`grid size-[74%] place-items-center rounded-full text-xs font-bold ${
-                          piece.player === "p"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-accent text-accent-foreground"
-                        }`}
-                      >
-                        {piece.king ? "♛" : ""}
-                      </span>
-                    )}
-                    {isTarget && !piece && (
-                      <span className="size-3 rounded-full bg-primary/70" aria-hidden="true" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <CheckersBoard
+              board={board}
+              selected={selected}
+              targets={selectedTargets}
+              legal={playerLegalSteps}
+              onSquare={handleSquare}
+              mySide="black"
+            />
 
             <Button variant="outline" className="mt-5 h-11 w-full" onClick={() => void finish("loss")}>
               Desistir

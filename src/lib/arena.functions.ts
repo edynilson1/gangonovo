@@ -96,7 +96,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
 
 export const saveProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         username: z
@@ -114,16 +114,15 @@ export const saveProfile = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     const { error } = await supabase
-      .from("profiles")
-      .upsert({
-        id: userId,
-        username: data.username,
-        display_name: data.displayName,
-        avatar_url: data.avatarUrl,
-        ...(data.countryCode ? { country_code: data.countryCode } : {}),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", userId);
+  .from("profiles")
+  .upsert({
+    id: userId,
+    username: data.username,
+    display_name: data.displayName,
+    avatar_url: data.avatarUrl,
+    ...(data.countryCode ? { country_code: data.countryCode } : {}),
+    updated_at: new Date().toISOString(),
+  }); // Sem .eq() aqui!
 
     if (error) {
       if (error.code === "23505") throw new Error("Esse nome de utilizador já está em uso.");
@@ -181,7 +180,6 @@ export const submitMemoryResult = createServerFn({ method: "POST" })
     if (data.pairsFound > data.pairsTotal || data.attempts < data.pairsFound) {
       throw new Error("Resultado inválido.");
     }
-    // Tempo mínimo plausível por par encontrado, para travar resultados fabricados.
     if (data.durationMs < data.pairsFound * 600) {
       throw new Error("Resultado inválido.");
     }
@@ -341,7 +339,6 @@ export const submitCheckersResult = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertRateLimit(supabase, userId);
 
-    // Travão a vitórias fabricadas em partidas instantâneas.
     if (data.result === "win" && (data.moves < 6 || data.capturedByPlayer < 2)) {
       throw new Error("Resultado inválido.");
     }

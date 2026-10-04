@@ -15,10 +15,17 @@ type Props = {
 export function AppShell({ children, requireProfile = true, hideNav = false }: Props) {
   const navigate = useNavigate();
   const { data, isLoading, isError, error, refetch } = useMyProfile();
-  const needsSetup = requireProfile && !!data && !data.profile?.username;
+  
+  // ADICIONE ESTE LOG PARA VERMOS O QUE O SUPABASE ESTÁ A DEVOLVER:
+  console.log("AppShell - Dados recebidos do perfil:", data);
 
+  const profile = data?.profile;
+  const hasUsername = Boolean(profile?.username);
+  const needsSetup = requireProfile && !isLoading && !!data && !hasUsername;
   useEffect(() => {
-    if (needsSetup) navigate({ to: "/configurar-perfil", replace: true });
+    if (needsSetup) {
+      navigate({ to: "/configurar-perfil", replace: true });
+    }
   }, [needsSetup, navigate]);
 
   return (
