@@ -97,42 +97,30 @@ function simpleStepsFrom(board: Board, from: Pos): Step[] {
     return [];
   }
 
-  const directions: Pos[] = [];
+  const directions =
+    piece.type === "man"
+      ? [
+          { row: forwardDirection(piece.player), col: -1 },
+          { row: forwardDirection(piece.player), col: 1 },
+        ]
+      : [
+          { row: -1, col: -1 },
+          { row: -1, col: 1 },
+          { row: 1, col: -1 },
+          { row: 1, col: 1 },
+        ];
+  const steps: Step[] = [];
 
-  if (piece.type === "man") {
-    const direction = forwardDirection(piece.player);
-
-    directions.push(
-      {
-        row: from.row + direction,
-        col: from.col - 1,
-      },
-      {
-        row: from.row + direction,
-        col: from.col + 1,
-      },
-    );
-  } else {
-    directions.push(
-      { row: from.row - 1, col: from.col - 1 },
-      { row: from.row - 1, col: from.col + 1 },
-      { row: from.row + 1, col: from.col - 1 },
-      { row: from.row + 1, col: from.col + 1 },
-    );
+  for (const direction of directions) {
+    let to = { row: from.row + direction.row, col: from.col + direction.col };
+    while (isInside(to) && board[to.row]?.[to.col] === null) {
+      steps.push({ from, to, capture: null });
+      if (piece.type === "man") break;
+      to = { row: to.row + direction.row, col: to.col + direction.col };
+    }
   }
 
-  return directions
-    .filter(isInside)
-    .filter(isDarkSquare)
-    .filter((pos) => {
-      const r = board[pos.row];
-      return r ? r[pos.col] === null : false;
-    })
-    .map((to) => ({
-      from,
-      to,
-      capture: null,
-    }));
+  return steps;
 }
 
 function captureStepsFrom(board: Board, from: Pos): Step[] {
@@ -142,67 +130,45 @@ function captureStepsFrom(board: Board, from: Pos): Step[] {
     return [];
   }
 
-  const directions: Pos[] = [];
-
-  if (piece.type === "man") {
-    const direction = forwardDirection(piece.player);
-
-    directions.push(
-      {
-        row: direction,
-        col: -1,
-      },
-      {
-        row: direction,
-        col: 1,
-      },
-    );
-  } else {
-    directions.push(
-      { row: -1, col: -1 },
-      { row: -1, col: 1 },
-      { row: 1, col: -1 },
-      { row: 1, col: 1 },
-    );
-  }
+  const directions: Pos[] = [
+    { row: -1, col: -1 },
+    { row: -1, col: 1 },
+    { row: 1, col: -1 },
+    { row: 1, col: 1 },
+  ];
 
   const result: Step[] = [];
 
   for (const direction of directions) {
-    const captured: Pos = {
-      row: from.row + direction.row,
-      col: from.col + direction.col,
-    };
+    let pos = { row: from.row + direction.row, col: from.col + direction.col };
 
-    const destination: Pos = {
-      row: from.row + direction.row * 2,
-      col: from.col + direction.col * 2,
-    };
-
-    if (!isInside(captured) || !isInside(destination)) {
+    if (piece.type === "man") {
+      const capturedPiece = board[pos.row]?.[pos.col];
+      const to = { row: pos.row + direction.row, col: pos.col + direction.col };
+      if (
+        capturedPiece &&
+        capturedPiece.player !== piece.player &&
+        isInside(to) &&
+        board[to.row]?.[to.col] === null
+      ) {
+        result.push({ from, to, capture: pos });
+      }
       continue;
     }
 
-    if (!isDarkSquare(destination)) {
-      continue;
+    while (isInside(pos) && board[pos.row]?.[pos.col] === null) {
+      pos = { row: pos.row + direction.row, col: pos.col + direction.col };
     }
 
-    const capturedRow = board[captured.row];
-    const destinationRow = board[destination.row];
+    if (!isInside(pos)) continue;
+    const capturedPiece = board[pos.row]?.[pos.col];
+    if (!capturedPiece || capturedPiece.player === piece.player) continue;
 
-    if (!capturedRow || !destinationRow) {
-      continue;
-    }
-
-    const capturedPiece = capturedRow[captured.col];
-    const destinationPiece = destinationRow[destination.col];
-
-    if (capturedPiece && capturedPiece.player !== piece.player && destinationPiece === null) {
-      result.push({
-        from,
-        to: destination,
-        capture: captured,
-      });
+    const captured = pos;
+    pos = { row: pos.row + direction.row, col: pos.col + direction.col };
+    while (isInside(pos) && board[pos.row]?.[pos.col] === null) {
+      result.push({ from, to: pos, capture: captured });
+      pos = { row: pos.row + direction.row, col: pos.col + direction.col };
     }
   }
 

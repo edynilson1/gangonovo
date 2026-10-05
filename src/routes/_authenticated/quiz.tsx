@@ -49,8 +49,8 @@ function QuizGame() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [remaining, setRemaining] = useState(QUIZ_QUESTION_MS);
-  const [streak, setStreak] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     xp: number;
     correct: number;
@@ -63,11 +63,21 @@ function QuizGame() {
   const roundStart = useRef(0);
   const tokenRef = useRef("");
   const answersRef = useRef<Answer[]>([]);
+  const answerLockedRef = useRef(false);
+  const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+    },
+    [],
+  );
 
   const submitRound = useCallback(
     async (finalAnswers: Answer[]) => {
       setPhase("result");
       setSubmitting(true);
+      setSubmissionError(null);
       try {
         const res = await submitQuizResult({
           data: {
@@ -86,7 +96,10 @@ function QuizGame() {
         });
         await queryClient.invalidateQueries({ queryKey: ["arena"] });
       } catch (error) {
-        toast.error((error as Error).message || "Não foi possível registar a partida.");
+        const message =
+          error instanceof Error ? error.message : "Não foi possível registar a partida.";
+        setSubmissionError(message);
+        toast.error(message);
       } finally {
         setSubmitting(false);
       }
@@ -96,8 +109,10 @@ function QuizGame() {
 
   const commitAnswer = useCallback(
     (choice: number) => {
+      if (phase !== "playing" || answerLockedRef.current) return;
       const question = questions[index];
       if (!question) return;
+      answerLockedRef.current = true;
       const answer: Answer = {
         questionId: question.id,
         choice,
@@ -107,9 +122,8 @@ function QuizGame() {
       answersRef.current = next;
       setAnswers(next);
       setSelected(choice);
-      setStreak((s) => (choice >= 0 ? s + 1 : 0));
 
-      setTimeout(() => {
+      transitionTimeoutRef.current = setTimeout(() => {
         if (index + 1 >= questions.length) {
           void submitRound(next);
         } else {
@@ -117,10 +131,11 @@ function QuizGame() {
           setSelected(null);
           setRemaining(QUIZ_QUESTION_MS);
           questionStart.current = Date.now();
+          answerLockedRef.current = false;
         }
       }, 450);
     },
-    [index, questions, submitRound],
+    [index, phase, questions, submitRound],
   );
 
   useEffect(() => {
@@ -151,8 +166,11 @@ function QuizGame() {
       setAnswers([]);
       answersRef.current = [];
       setSelected(null);
-      setStreak(0);
+      answerLockedRef.current = false;
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
       setResult(null);
+      setSubmissionError(null);
       setRemaining(QUIZ_QUESTION_MS);
       tokenRef.current = crypto.randomUUID();
       roundStart.current = Date.now();
@@ -225,7 +243,6 @@ function QuizGame() {
                 <Timer className="size-4 text-primary" aria-hidden="true" />
                 {Math.ceil(remaining / 1000)}s
               </span>
-              <span className="text-primary">🔥 {streak}</span>
             </div>
             <Progress value={(remaining / QUIZ_QUESTION_MS) * 100} className="h-1.5" />
 
@@ -262,47 +279,66 @@ function QuizGame() {
               </div>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">Quiz terminado</p>
-                <p className="animate-xp-pop mt-2 text-4xl font-bold text-primary">
-                  +{result?.xp ?? 0} XP
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  XP total: {result?.totalXp ?? 0}
-                </p>
+                {submissionError ? (
+                  <>
+                    <p className="text-sm text-destructive">{submissionError}</p>
+                    <button
+                      type="button"
+                      className="mt-4 h-11 w-full rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                      onClick={() => void submitRound(answersRef.current)}
+                    >
+                      Tentar registar novamente
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">Quiz terminado</p>
+                    <p className="animate-xp-pop mt-2 text-4xl font-bold text-primary">
+                      +{result?.xp ?? 0} XP
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      XP total: {result?.totalXp ?? 0}
+                    </p>
+                  </>
+                )}
 
-                <dl className="mt-5 grid grid-cols-3 gap-3 text-sm">
-                  <div className="rounded-xl bg-surface-2 p-3">
-                    <dt className="text-xs text-muted-foreground">Certas</dt>
-                    <dd className="flex items-center justify-center gap-1 font-semibold">
-                      <Check className="size-4 text-primary" aria-hidden="true" />
-                      {result?.correct ?? 0}
-                    </dd>
-                  </div>
-                  <div className="rounded-xl bg-surface-2 p-3">
-                    <dt className="text-xs text-muted-foreground">Erradas</dt>
-                    <dd className="flex items-center justify-center gap-1 font-semibold">
-                      <X className="size-4 text-destructive" aria-hidden="true" />
-                      {(result?.total ?? 0) - (result?.correct ?? 0)}
-                    </dd>
-                  </div>
-                  <div className="rounded-xl bg-surface-2 p-3">
-                    <dt className="text-xs text-muted-foreground">Sequência</dt>
-                    <dd className="font-semibold">{result?.bestStreak ?? 0}</dd>
-                  </div>
-                </dl>
+                {!submissionError && (
+                  <dl className="mt-5 grid grid-cols-3 gap-3 text-sm">
+                    <div className="rounded-xl bg-surface-2 p-3">
+                      <dt className="text-xs text-muted-foreground">Certas</dt>
+                      <dd className="flex items-center justify-center gap-1 font-semibold">
+                        <Check className="size-4 text-primary" aria-hidden="true" />
+                        {result?.correct ?? 0}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl bg-surface-2 p-3">
+                      <dt className="text-xs text-muted-foreground">Erradas</dt>
+                      <dd className="flex items-center justify-center gap-1 font-semibold">
+                        <X className="size-4 text-destructive" aria-hidden="true" />
+                        {(result?.total ?? 0) - (result?.correct ?? 0)}
+                      </dd>
+                    </div>
+                    <div className="rounded-xl bg-surface-2 p-3">
+                      <dt className="text-xs text-muted-foreground">Sequência</dt>
+                      <dd className="font-semibold">{result?.bestStreak ?? 0}</dd>
+                    </div>
+                  </dl>
+                )}
 
-                <div className="mt-6 space-y-2">
-                  <Button className="h-12 w-full" onClick={() => void startRound()}>
-                    <RotateCcw className="mr-2 size-4" aria-hidden="true" /> Jogar novamente
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-11 w-full"
-                    onClick={() => setPhase("setup")}
-                  >
-                    Mudar categoria
-                  </Button>
-                </div>
+                {!submissionError && (
+                  <div className="mt-6 space-y-2">
+                    <Button className="h-12 w-full" onClick={() => void startRound()}>
+                      <RotateCcw className="mr-2 size-4" aria-hidden="true" /> Jogar novamente
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-11 w-full"
+                      onClick={() => setPhase("setup")}
+                    >
+                      Mudar categoria
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>

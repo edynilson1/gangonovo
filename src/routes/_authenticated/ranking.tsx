@@ -34,7 +34,7 @@ function RankingContent() {
     <div>
       <h1 className="text-2xl font-bold">Ranking global</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Ordenado por XP total. Empates desempatam por vitórias e depois por quem chegou primeiro.
+        Top 25 jogadores, ordenados por XP total. Empates desempatam por vitórias e antiguidade.
       </p>
 
       {isLoading ? (
@@ -73,9 +73,15 @@ function RankingContent() {
                   className="size-9 rounded-full bg-surface-2"
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{entry.display_name}</span>
+                  <span className="block truncate text-sm font-medium">
+                    {entry.username ? `@${entry.username}` : entry.display_name || "Jogador"}
+                    {entry.id === data.myId ? " (tu)" : ""}
+                  </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    @{entry.username} · {entry.wins} vitórias
+                    {entry.display_name && entry.display_name !== entry.username
+                      ? `${entry.display_name} · `
+                      : ""}
+                    {entry.wins} vitórias
                   </span>
                 </span>
                 <span className="text-sm font-semibold">{entry.total_xp} XP</span>
@@ -95,7 +101,9 @@ function RankingContent() {
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium">
-                  {me.data?.profile?.display_name} (tu)
+                  {me.data?.profile?.username
+                    ? `@${me.data.profile.username} (tu)`
+                    : `${me.data?.profile?.display_name ?? "Jogador"} (tu)`}
                 </span>
                 <span className="block text-xs text-muted-foreground">Fora do Top 25</span>
               </span>

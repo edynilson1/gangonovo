@@ -1,14 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Check, ImagePlus, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMyProfile } from "@/hooks/useArena";
-import { saveProfile } from "@/lib/arena.functions";
+import { saveProfile, uploadProfileAvatar } from "@/lib/arena.functions";
 import { AVATAR_PRESETS } from "@/lib/avatars";
 
 export const Route = createFileRoute("/_authenticated/configurar-perfil")({
@@ -39,6 +39,8 @@ function ProfileSetup() {
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   /*
    * IMPORTANTE:
@@ -65,6 +67,7 @@ function ProfileSetup() {
 
     if (data.profile.avatar_url) {
       setAvatar(data.profile.avatar_url);
+      setAvatarFile(null);
     }
 
     if (data.profile.username) {
@@ -75,6 +78,43 @@ function ProfileSetup() {
       setDisplayName(data.profile.display_name);
     }
   }, [data]);
+
+  useEffect(
+    () => () => {
+      if (avatar.startsWith("blob:")) URL.revokeObjectURL(avatar);
+    },
+    [avatar],
+  );
+
+  function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Escolhe uma imagem JPG, PNG ou WebP.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 2 MB.");
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatar(URL.createObjectURL(file));
+  }
+
+  function fileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("Não foi possível ler a imagem selecionada."));
+      };
+      reader.onerror = () => reject(new Error("Não foi possível ler a imagem selecionada."));
+      reader.readAsDataURL(file);
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -88,12 +128,15 @@ function ProfileSetup() {
       const normalizedDisplayName = displayName.trim();
 
       await queryClient.cancelQueries({ queryKey: ["arena", "me"] });
+      const uploadedAvatar = avatarFile
+        ? await uploadProfileAvatar({ data: { image: await fileAsDataUrl(avatarFile) } })
+        : null;
 
       const savedProfile = await saveProfile({
         data: {
           username: normalizedUsername,
           displayName: normalizedDisplayName,
-          avatarUrl: avatar,
+          avatarUrl: uploadedAvatar?.avatarUrl ?? avatar,
         },
       });
 
@@ -131,7 +174,16 @@ function ProfileSetup() {
   return (
     <div className="arena-hero min-h-screen px-5 py-8">
       <div className="mx-auto w-full max-w-md">
-        <h1 className="text-2xl font-bold">Configura o teu perfil</h1>
+        <div className="mb-4 flex items-center gap-2">
+          <Link
+            to="/inicio"
+            aria-label="Voltar ao início"
+            className="rounded-lg p-2 hover:bg-surface-2"
+          >
+            <ArrowLeft className="size-5" aria-hidden="true" />
+          </Link>
+          <h1 className="text-2xl font-bold">Configura o teu perfil</h1>
+        </div>
 
         <p className="mt-1 text-sm text-muted-foreground">
           Precisas de um avatar, nome de utilizador e nome de exibição antes de jogar.
@@ -149,7 +201,26 @@ function ProfileSetup() {
               <div>
                 <p className="text-sm font-semibold">Escolhe o teu avatar</p>
 
-                <p className="text-xs text-muted-foreground">Podes mudar depois no perfil.</p>
+                <p className="text-xs text-muted-foreground">
+                  Escolhe da galeria ou usa um avatar pronto. JPG, PNG ou WebP, até 2 MB.
+                </p>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  aria-label="Escolher imagem da galeria"
+                  onChange={handleAvatarChange}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-2 h-9"
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  <ImagePlus className="mr-2 size-4" aria-hidden="true" />
+                  Escolher da galeria
+                </Button>
               </div>
             </div>
 
@@ -165,7 +236,10 @@ function ProfileSetup() {
                   role="radio"
                   aria-checked={avatar === preset}
                   aria-label="Avatar"
-                  onClick={() => setAvatar(preset)}
+                  onClick={() => {
+                    setAvatarFile(null);
+                    setAvatar(preset);
+                  }}
                   className={`relative aspect-square rounded-full bg-surface-2 p-1 transition-transform hover:scale-105 ${
                     avatar === preset ? "ring-2 ring-primary" : "ring-1 ring-border"
                   }`}

@@ -179,6 +179,104 @@ export type Database = {
           },
         ];
       };
+      memory_rooms: {
+        Row: {
+          attempts: number;
+          category: string;
+          created_at: string;
+          deck: Json;
+          finished_at: string | null;
+          first_card_key: string | null;
+          guest_id: string | null;
+          guest_score: number;
+          host_id: string;
+          host_score: number;
+          id: string;
+          matched_keys: string[];
+          pairs: number;
+          revealed_keys: string[];
+          started_at: string | null;
+          status: string;
+          turn_available_at: string | null;
+          turn_user_id: string | null;
+          updated_at: string;
+          winner_id: string | null;
+        };
+        Insert: {
+          attempts?: number;
+          category: string;
+          created_at?: string;
+          deck: Json;
+          finished_at?: string | null;
+          first_card_key?: string | null;
+          guest_id?: string | null;
+          guest_score?: number;
+          host_id: string;
+          host_score?: number;
+          id?: string;
+          matched_keys?: string[];
+          pairs: number;
+          revealed_keys?: string[];
+          started_at?: string | null;
+          status?: string;
+          turn_available_at?: string | null;
+          turn_user_id?: string | null;
+          updated_at?: string;
+          winner_id?: string | null;
+        };
+        Update: {
+          attempts?: number;
+          category?: string;
+          created_at?: string;
+          deck?: Json;
+          finished_at?: string | null;
+          first_card_key?: string | null;
+          guest_id?: string | null;
+          guest_score?: number;
+          host_id?: string;
+          host_score?: number;
+          id?: string;
+          matched_keys?: string[];
+          pairs?: number;
+          revealed_keys?: string[];
+          started_at?: string | null;
+          status?: string;
+          turn_available_at?: string | null;
+          turn_user_id?: string | null;
+          updated_at?: string;
+          winner_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "memory_rooms_guest_id_fkey";
+            columns: ["guest_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "memory_rooms_host_id_fkey";
+            columns: ["host_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "memory_rooms_turn_user_id_fkey";
+            columns: ["turn_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "memory_rooms_winner_id_fkey";
+            columns: ["winner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -338,6 +436,26 @@ export type Database = {
         }[];
       };
       user_rank: { Args: { _user_id: string }; Returns: number };
+      record_game_session: {
+        Args: {
+          p_client_token: string;
+          p_count_win: boolean;
+          p_duration: number;
+          p_game_type: string;
+          p_metadata: Json;
+          p_result: string | null;
+          p_score: number;
+          p_user_id: string;
+          p_xp: number;
+        };
+        Returns: {
+          session_id: string;
+          xp_earned: number;
+          score: number;
+          total_xp: number;
+          wins: number;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;

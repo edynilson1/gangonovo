@@ -129,10 +129,69 @@ export const saveProfile = createServerFn({ method: "POST" })
       .single();
 
     if (error) {
-      if (error.code === "23505") throw new Error("Esse nome de utilizador já está em uso.");
-      throw new Error("Não foi possível guardar o perfil.");
+      console.error("ERRO SUPABASE AO GUARDAR PERFIL:", error);
+
+      if (error.code === "23505") {
+        throw new Error("Esse nome de utilizador já está em uso.");
+      }
+
+      throw new Error(error.message || "Não foi possível guardar o perfil.");
     }
     return { profile: profile as ProfileRow };
+  });
+
+export const uploadProfileAvatar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        image: z
+          .string()
+          .max(2_800_000)
+          .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(data.image);
+    if (!match) throw new Error("Formato de imagem inválido.");
+
+    const mimeType = `image/${match[1]}`;
+    const image = Buffer.from(match[2]!, "base64");
+    if (image.length === 0 || image.length > 2 * 1024 * 1024) {
+      throw new Error("A imagem deve ter no máximo 2 MB.");
+    }
+    const isPng = image.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    const isJpeg = image[0] === 0xff && image[1] === 0xd8 && image[2] === 0xff;
+    const isWebp =
+      image.subarray(0, 4).toString("ascii") === "RIFF" &&
+      image.subarray(8, 12).toString("ascii") === "WEBP";
+    if (
+      (match[1] === "png" && !isPng) ||
+      (match[1] === "jpeg" && !isJpeg) ||
+      (match[1] === "webp" && !isWebp)
+    ) {
+      throw new Error("O formato do ficheiro não corresponde à imagem.");
+    }
+
+    const extension = match[1] === "jpeg" ? "jpg" : match[1];
+    const path = `${context.userId}/avatar.${extension}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.storage.from("profile-avatars").upload(path, image, {
+      contentType: mimeType,
+      cacheControl: "0",
+      upsert: true,
+    });
+    if (error) {
+      console.error("[Perfil] Falha ao carregar avatar.", {
+        code: error.name,
+        message: error.message,
+      });
+      throw new Error("Não foi possível carregar a imagem. Tenta novamente.");
+    }
+
+    const { data: publicUrl } = supabaseAdmin.storage.from("profile-avatars").getPublicUrl(path);
+    return { avatarUrl: `${publicUrl.publicUrl}?v=${Date.now()}` };
   });
 
 export const getLeaderboard = createServerFn({ method: "GET" })
@@ -143,7 +202,10 @@ export const getLeaderboard = createServerFn({ method: "GET" })
     if (error) throw new Error("Não foi possível carregar o ranking.");
     const { data: rank } = await supabase.rpc("user_rank", { _user_id: userId });
     return {
-      top: (top ?? []) as LeaderboardEntry[],
+      top: ((top ?? []).slice(0, 25) as LeaderboardEntry[]).map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+      })),
       myRank: (rank as number | null) ?? null,
       myId: userId,
     };

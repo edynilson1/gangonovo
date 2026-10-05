@@ -33,7 +33,7 @@ const GAMES = [
   {
     to: "/damas",
     title: "Damas",
-    desc: "Tabuleiro 8x8 contra o computador, com três dificuldades.",
+    desc: "Damas 8x8 com capturas para trás, sequências e damas que percorrem diagonais.",
     icon: Crown,
     tag: "Até 150 XP",
   },
